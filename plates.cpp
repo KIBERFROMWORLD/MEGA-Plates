@@ -1128,7 +1128,7 @@ void UpdateAll() {
     }
 }
 
-Window* createWindow(const char* title, Rect rect, int windowFlags, int rendererFlags, std::string name) {
+Window* createWindow(const char* title, Rect rect, int windowFlags, int rendererFlags, std::string name, std::function<void()> drawAddedRenderer = {}, bool isOverlay = false) {
     if ((rendererFlags == RENDERER_VULKAN || rendererFlags == RENDERER_OPTIMAL) && windowFlags != WINDOW_VULKAN)
         windowFlags |= WINDOW_VULKAN;
 
@@ -1148,7 +1148,9 @@ Window* createWindow(const char* title, Rect rect, int windowFlags, int renderer
     if (wantVulkan) {
         win->isVulkan = true;
         win->eng.startWin = wind;
-        win->eng.start();
+        win->graphContext = win->eng.start();
+        win->eng.drawAddedRenderer = drawAddedRenderer;
+        win->eng.isOverlay = isOverlay;
     } else {
         SDL_Surface* surface = SDL_CreateRGBSurface(0, win->rect.w, win->rect.h, 0, 0, 0, 0, 0);
 
@@ -1356,7 +1358,7 @@ Sound createSound(const char* path, std::string name, int soundFlags) {
     return mainSpace.sounds.back();
 }
 
-inline bool open_video(const char* path, DecoderState& st, bool isVulkan) {
+bool open_video(const char* path, DecoderState& st, bool isVulkan) {
     if (avformat_open_input(&st.fmt_ctx, path, nullptr, nullptr) < 0) {
         fprintf(stderr, "Failed to open the file: %s\n", path);
         return false;
@@ -1390,7 +1392,7 @@ inline bool open_video(const char* path, DecoderState& st, bool isVulkan) {
     }
 }
 
-inline void open_audio(DecoderState& st) {
+void open_audio(DecoderState& st) {
     st.audio_stream_idx = av_find_best_stream(st.fmt_ctx, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
     if (st.audio_stream_idx < 0) return;
 
@@ -1419,7 +1421,7 @@ inline void open_audio(DecoderState& st) {
     }
 }
 
-inline AVFrame* alloc_yuv420p_frame(int w, int h) {
+AVFrame* alloc_yuv420p_frame(int w, int h) {
     AVFrame* f = av_frame_alloc();
     f->format = AV_PIX_FMT_YUV420P;
     f->width = w;
@@ -1431,7 +1433,7 @@ inline AVFrame* alloc_yuv420p_frame(int w, int h) {
     return f;
 }
 
-inline AVFrame* alloc_rgba_frame(int w, int h) {
+AVFrame* alloc_rgba_frame(int w, int h) {
     AVFrame* f = av_frame_alloc();
     f->format = AV_PIX_FMT_RGBA;
     f->width = w;
@@ -1443,7 +1445,7 @@ inline AVFrame* alloc_rgba_frame(int w, int h) {
     return f;
 }
 
-inline void handle_audio_packet(DecoderState* st, AVPacket* pkt,
+void handle_audio_packet(DecoderState* st, AVPacket* pkt,
                                  SDL_AudioDeviceID audio_device,
                                  AVFrame* audio_frame, uint8_t** resampled_buf, float volume) {
     if (avcodec_send_packet(st->audio_codec_ctx, pkt) < 0) return;
@@ -1484,7 +1486,7 @@ inline void handle_audio_packet(DecoderState* st, AVPacket* pkt,
     }
 }
 
-inline void decoder_thread_func(VideoDecoderContext* ctx) {
+void decoder_thread_func(VideoDecoderContext* ctx) {
     DecoderState* st = &ctx->decoderState;
     AVPacket* pkt = av_packet_alloc();
     AVFrame* frame = av_frame_alloc();
@@ -2032,7 +2034,7 @@ void setSoundVolume         (Sound& s, float v)           { ma_sound_set_volume(
 void setSoundPosition       (Sound& s, float x, float y)  { ma_sound_set_position(&s.sound, x, y, 0); }
 
 void playVideo              (Video& v)                    { v.ctx->decoding = true; }
-void stopSound              (Video& v)                    { v.ctx->decoding = false; }
+void stopVideo              (Video& v)                    { v.ctx->decoding = false; }
 void setVideoLooped         (Video& v)                    { v.ctx->looped   = true; }
 void setVideoUnlooped       (Video& v)                    { v.ctx->looped   = false; }
 void setVideoVolume         (Video& v, float vol)         { v.setVolume(vol); }

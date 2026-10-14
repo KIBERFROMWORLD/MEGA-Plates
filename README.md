@@ -1,7 +1,6 @@
 # MEGA Plates
 
 **Plates** is a lightweight C++ GUI library built on top of SDL2, SDL2_ttf, SDL2_image, SDL2_gfx, Vulkan, STB, shaderc and miniaudio.  
-Single-file — just `#include "plates.cpp"` and you're good to go.
 
 ---
 
@@ -54,7 +53,7 @@ EventLoop {
 ```cpp
 #include "plates.cpp"
 
-Window wnd;
+Window* wnd;
 
 Main {
     wnd = createWindow("My App", {100, 100, 800, 600},
@@ -83,7 +82,8 @@ EventLoop {
 ### Window
 
 ```cpp
-Window& createWindow(const char* title, Rect rect, int windowFlags, int rendererFlags, std::string name);
+Window& createWindow(const char* title, Rect rect, int windowFlags, int rendererFlags, std::string name, 
+                std::function<void()> drawAddedRenderer = {}, bool isOverlay = false);
 void   setBackground(Color clr, Window* wnd);
 ```
 
@@ -132,7 +132,7 @@ CheckBox& createCheckBox(Window* win, UniformRect rect, Color clr, bool isOn, st
 ### Radio Button
 
 ```cpp
-auto* createRadioButton(Window* win, UniformRect uRect,
+RadioButton& createRadioButton(Window* win, UniformRect uRect,
                         Color clrOff, Color clrOn,
                         bool status, int group, std::string name);
 ```
@@ -184,7 +184,7 @@ void  setSoundPosition(Sound sound, float x, float y);
 
 ```cpp
 void playVideo              (Video& v);
-void stopSound              (Video& v);
+void stopVideo              (Video& v);
 void setVideoLooped         (Video& v);
 void setVideoUnlooped       (Video& v);
 void setVideoVolume         (Video& v, float vol);
@@ -250,7 +250,7 @@ Color   getPixel(Window* win, const char* canvasName, int x, int y);
 **Example — plasma-style pixel canvas:**
 
 ```cpp
-Window wnd;
+Window* wnd;
 
 Main {
     wnd = createWindow("Pixels", {100, 100, 640, 480},
@@ -681,7 +681,7 @@ tw.anim     = TweenType::EaseInOut;
 tw.update(0.016f); // deltaTime in seconds
 ```
 
-|Function|Description|
+|Tween|Description|
 |---|---|
 |`Linear`|Constant speed, no easing|
 |`EaseIn`|Starts slow, accelerates|
